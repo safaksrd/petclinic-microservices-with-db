@@ -1,0 +1,118 @@
+version: '2'
+
+services: 
+  config-server: # ilk bu servis ayaga kalkacak
+    image: petclinic-config-server:dev # bir önceki adimda olusan image burada kullanilir
+    container_name: config-server
+    mem_limit: 512M # konteynir hata alirsa ram i sömürebilir. kaynak kullanimini kisitlamaliyiz ki konteynir sistemi cökertmesin. bu özellik versiyon 2 de oldugu icin version 2 kullanildi. Konteynira deklarative olarak bir limit koyoyoruz.
+    ports: 
+      - 8888:8888
+
+  discovery-server:
+    image: petclinic-discovery-server:dev
+    container_name: discovery-server
+    mem_limit: 512M
+    ports: 
+      - 8761:8761
+    depends_on: # config server ayaga kalkinca ayaga kalkacak
+      - config-server
+    entrypoint: ["./dockerize", "-wait=tcp://config-server:8888", "-timeout=160s", "--", "java", "-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"] # config-server in hazir olup olmadigini kontrol eder. Dockerfile daki entrypoint de sadece java komutu vardi. docker-compose-local.yml file daki entrypoint dockerfile daki entrypoint in üzerine yazar. Aradaki "--" ile öncesinde dockerize komutu sonrasinda java komutu calistiriyoruz
+
+  customers-service:
+    image: petclinic-customers-service:dev
+    container_name: customers-service
+    mem_limit: 512M
+    ports:
+     - 8081:8081
+    depends_on: # config server ve discovery server ayaga kalkinca ayaga kalkacak
+     - config-server
+     - discovery-server
+    entrypoint: ["./dockerize", "-wait=tcp://discovery-server:8761", "-timeout=160s", "--", "java", "-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar" ] # discovery-server in hazir olup olmadigini kontrol eder. Dockerfile daki entrypoint de sadece java komutu vardi. docker-compose-local.yml file daki entrypoint dockerfile daki entrypoint in üzerine yazar. Aradaki "--" ile öncesinde dockerize komutu sonrasinda java komutu calistiriyoruz
+  
+  visits-service:
+    image: petclinic-visits-service:dev
+    container_name: visits-service
+    mem_limit: 512M
+    ports:
+     - 8082:8082
+    depends_on: # config server ve discovery server ayaga kalkinca ayaga kalkacak
+     - config-server
+     - discovery-server
+    entrypoint: ["./dockerize", "-wait=tcp://discovery-server:8761", "-timeout=160s", "--", "java", "-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar" ] # discovery-server in hazir olup olmadigini kontrol eder. Dockerfile daki entrypoint de sadece java komutu vardi. docker-compose-local.yml file daki entrypoint dockerfile daki entrypoint in üzerine yazar. Aradaki "--" ile öncesinde dockerize komutu sonrasinda java komutu calistiriyoruz
+  
+  vets-service:
+    image: petclinic-vets-service:dev
+    container_name: vets-service
+    mem_limit: 512M
+    ports:
+     - 8083:8083
+    depends_on: # config server ve discovery server ayaga kalkinca ayaga kalkacak
+     - config-server
+     - discovery-server
+    entrypoint: ["./dockerize", "-wait=tcp://discovery-server:8761", "-timeout=160s", "--", "java", "-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar" ] # discovery-server in hazir olup olmadigini kontrol eder. Dockerfile daki entrypoint de sadece java komutu vardi. docker-compose-local.yml file daki entrypoint dockerfile daki entrypoint in üzerine yazar. Aradaki "--" ile öncesinde dockerize komutu sonrasinda java komutu calistiriyoruz
+  
+  api-gateway:
+    image: petclinic-api-gateway:dev
+    container_name: api-gateway
+    mem_limit: 512M
+    ports:
+     - 8080:8080
+    depends_on: # config server ve discovery server ayaga kalkinca ayaga kalkacak
+     - config-server
+     - discovery-server
+    entrypoint: ["./dockerize", "-wait=tcp://discovery-server:8761", "-timeout=160s", "--", "java", "-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar" ] # discovery-server in hazir olup olmadigini kontrol eder. Dockerfile daki entrypoint de sadece java komutu vardi. docker-compose-local.yml file daki entrypoint dockerfile daki entrypoint in üzerine yazar. Aradaki "--" ile öncesinde dockerize komutu sonrasinda java komutu calistiriyoruz
+  
+  admin-server:
+    image: petclinic-admin-server:dev
+    container_name: admin-server
+    mem_limit: 512M
+    ports:
+     - 9090:9090
+    depends_on: # config server ve discovery server ayaga kalkinca ayaga kalkacak
+     - config-server
+     - discovery-server
+    entrypoint: ["./dockerize", "-wait=tcp://discovery-server:8761", "-timeout=160s", "--", "java", "-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar" ] # discovery-server in hazir olup olmadigini kontrol eder. Dockerfile daki entrypoint de sadece java komutu vardi. docker-compose-local.yml file daki entrypoint dockerfile daki entrypoint in üzerine yazar. Aradaki "--" ile öncesinde dockerize komutu sonrasinda java komutu calistiriyoruz
+
+  hystrix-dashboard:
+    image: petclinic-hystrix-dashboard:dev
+    container_name: hystrix-dashboard
+    mem_limit: 512M
+    ports:
+     - 7979:7979
+    depends_on: # config server ve discovery server ayaga kalkinca ayaga kalkacak
+     - config-server
+     - discovery-server
+    entrypoint: ["./dockerize", "-wait=tcp://discovery-server:8761", "-timeout=160s", "--", "java", "-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar" ] # discovery-server in hazir olup olmadigini kontrol eder. Dockerfile daki entrypoint de sadece java komutu vardi. docker-compose-local.yml file daki entrypoint dockerfile daki entrypoint in üzerine yazar. Aradaki "--" ile öncesinde dockerize komutu sonrasinda java komutu calistiriyoruz
+
+  tracing-server:
+    image: openzipkin/zipkin # circuit breaker. bir servise cok yuklenme olup cevap veremezse tüm sistem cökmesin diye konteynira gelen trafigi kesiyor
+    container_name: tracing-server
+    mem_limit: 512M # eski versiyon java kullanilirsa 512 limitin kullanilabilmeis iicn asagidaki environment bug inin girilmesi gerekiyor.
+    environment:
+    - JAVA_OPTS=-XX:+UnlockExperimentalVMOptions -Djava.security.egd=file:/dev/./urandom
+    ports:
+     - 9411:9411 
+  
+  grafana-server:
+    image: petclinic-grafana-server:dev
+    container_name: grafana-server
+    mem_limit: 256M
+    ports:
+    - 3000:3000
+
+  prometheus-server:
+    image: petclinic-prometheus-server:dev
+    container_name: prometheus-server
+    mem_limit: 256M
+    ports:
+    - 9091:9090 # host 9090 portunu admin-server kullandigi icin 9091 yazdik
+
+  mysql-server:
+    image: mysql:5.7.8
+    container_name: mysql-server
+    environment: 
+      MYSQL_ROOT_PASSWORD: petclinic
+      MYSQL_DATABASE: petclinic
+    mem_limit: 256M
+    ports:
+    - 3306:3306

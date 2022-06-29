@@ -70,7 +70,7 @@ Resources:
         - Key: server
           Value: jenkins
       UserData:
-        Fn::Base64: | # Ilgili adimda ECR en az AWS CLI 1.9 ile calistigi icin AWS CLI yi silip CLI version 2 yi kurariz
+        Fn::Base64: |
           #! /bin/bash
           # update os
           yum update -y
